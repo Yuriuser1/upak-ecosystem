@@ -19,10 +19,10 @@ app = Flask(__name__)
 
 # Rate limiting setup
 limiter = Limiter(
-    app,
     key_func=get_remote_address,
     default_limits=["100 per hour"]
 )
+limiter.init_app(app)
 
 # Configuration
 WEBHOOK_SECRET = os.getenv('WEBHOOK_SECRET', 'default-secret-key')
@@ -166,6 +166,17 @@ def internal_error(e):
         'error': 'Internal server error',
         'timestamp': datetime.utcnow().isoformat()
     }), 500
+
+# Import and register routers
+from routers.flask_payments import payments_bp
+from routers.flask_generate import generate_bp
+from routers.auth_router import auth_bp
+from routers.lk_router import lk_bp
+
+app.register_blueprint(payments_bp, url_prefix='/payments')
+app.register_blueprint(generate_bp, url_prefix='/')
+app.register_blueprint(auth_bp, url_prefix='/auth')
+app.register_blueprint(lk_bp, url_prefix='/')
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
